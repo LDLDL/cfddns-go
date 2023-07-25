@@ -19,3 +19,12 @@
 
 # Go workspace file
 go.work
+
+# config file
+config.json
+
+# log file
+cfddns.log
+
+# linux binary name
+cfddns-go
