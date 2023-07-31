@@ -132,7 +132,7 @@ func getDnsRecordId(domain string, recordType string) string {
 	err = fmt.Errorf("domain record id not found")
 
 EXIT:
-	log.Printf("[ERR] Get domain '%s' record id failed: %s", domain, err.Error())
+	log.Printf("[ERR] Get domain %s, type %s record id failed: %s", domain, recordType, err.Error())
 	os.Exit(1)
 	return ""
 }

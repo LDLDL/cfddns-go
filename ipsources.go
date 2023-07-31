@@ -31,7 +31,7 @@ func (s *SimpleSource) Fetch() (string, error) {
 }
 
 func (s *SimpleSource) String() string {
-	return fmt.Sprintf("<simple source; endpoint='%s', IPFamily='%d'>", s.EndPoint, s.IPFamily)
+	return fmt.Sprintf("<simple source; endpoint=%s, IPFamily=%d>", s.EndPoint, s.IPFamily)
 }
 
 type CFTrace struct {
@@ -61,5 +61,5 @@ func (s *CFTrace) Fetch() (string, error) {
 }
 
 func (s *CFTrace) String() string {
-	return fmt.Sprintf("<CFtrace; endpoint='%s', IPFamily='%d'>", s.EndPoint, s.IPFamily)
+	return fmt.Sprintf("<CFtrace; endpoint=%s, IPFamily=%d>", s.EndPoint, s.IPFamily)
 }

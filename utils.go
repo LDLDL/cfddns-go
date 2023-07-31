@@ -59,7 +59,7 @@ func GetIPByDns(domain string, recordType string) (string, error) {
 	} else if recordType == "AAAA" {
 		network = "ip6"
 	} else {
-		return "", fmt.Errorf("record type '%s' is not supported", recordType)
+		return "", fmt.Errorf("record type %s is not supported", recordType)
 	}
 
 	addrs, err := net.DefaultResolver.LookupIP(ctx, network, domain)

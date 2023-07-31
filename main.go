@@ -79,7 +79,7 @@ func init() {
 	if c, err := os.ReadFile(*conf); err == nil {
 		if err := json.Unmarshal(c, &config); err == nil {
 			if !*onetime {
-				log.Println("[INF] Config loaded")
+				log.Println("\n\n[INF] ================ Config loaded ================")
 			}
 			goto NEXT
 		}
@@ -104,8 +104,8 @@ func main() {
 
 	for {
 		checkDomains()
-		time.Sleep(10 * time.Minute)
 		log.Printf("[INF] Sleep 10 minutes")
+		time.Sleep(10 * time.Minute)
 	}
 }
 
@@ -121,8 +121,9 @@ func checkDomains() {
 		for _, record := range config.RecordA {
 			recordIP, success := tryGetDomainRecordedIP(record.Name, "A")
 			if success {
-				log.Printf("[INF] domain '%s' recorded ipv4 is: %s", record.Name, recordIP)
+				log.Printf("[INF] domain %s recorded ipv4 is: %s", record.Name, recordIP)
 				if currentIP != recordIP {
+					log.Printf("[INF] IPv4 address changed")
 					tryUpdateCFRecord(record, "A", currentIP)
 				}
 			}
@@ -134,12 +135,13 @@ func checkDomains() {
 		if !success {
 			return
 		}
-		log.Printf("[INF] Current ipv4 address is: %s", currentIP)
-		for _, record := range config.RecordA {
+		log.Printf("[INF] Current ipv6 address is: %s", currentIP)
+		for _, record := range config.RecordAAAA {
 			recordIP, success := tryGetDomainRecordedIP(record.Name, "AAAA")
 			if success {
-				log.Printf("[INF] domain '%s' recorded ipv6 is: %s", record.Name, recordIP)
+				log.Printf("[INF] domain %s recorded ipv6 is: %s", record.Name, recordIP)
 				if currentIP != recordIP {
+					log.Printf("[INF] IPv6 address changed")
 					tryUpdateCFRecord(record, "AAAA", currentIP)
 				}
 			}
@@ -153,7 +155,7 @@ func tryGetDomainRecordedIP(domain string, recordType string) (string, bool) {
 		if err == nil {
 			return ip, true
 		}
-		log.Printf("[WAR] %d/5 Failed to resolve domain '%s' : %s", i+1, domain, err.Error())
+		log.Printf("[WAR] %d/5 Failed to resolve domain %s, type %s : %s", i+1, domain, recordType, err.Error())
 	}
 
 	log.Printf("[WAR] Resolve domain retry limitation reached")
@@ -179,9 +181,10 @@ func tryUpdateCFRecord(domain CFRecord, recordType string, ip string) {
 	for i := 0; i < 5; i++ {
 		err := UpdateCFRecord(domain, recordType, ip)
 		if err == nil {
+			log.Printf("[INF] Domain %s, type %s record updated", domain.Name, recordType)
 			return
 		}
-		log.Printf("[WAR] %d/5 Failed to update domain: %s", i+1, err.Error())
+		log.Printf("[WAR] %d/5 Failed to update domain %s, type %s: %s", i+1, domain.Name, recordType, err.Error())
 	}
 
 	log.Printf("[WAR] Update domain retry limitation reached")
