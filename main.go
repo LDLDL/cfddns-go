@@ -121,7 +121,7 @@ func checkDomains() {
 		for _, record := range config.RecordA {
 			recordIP, success := tryGetDomainRecordedIP(record.Name, "A")
 			if success {
-				log.Printf("[INF] domain %s recorded ipv4 is: %s", record.Name, recordIP)
+				log.Printf("[INF] Domain %s recorded ipv4 is: %s", record.Name, recordIP)
 				if currentIP != recordIP {
 					log.Printf("[INF] IPv4 address changed")
 					tryUpdateCFRecord(record, "A", currentIP)
@@ -139,7 +139,7 @@ func checkDomains() {
 		for _, record := range config.RecordAAAA {
 			recordIP, success := tryGetDomainRecordedIP(record.Name, "AAAA")
 			if success {
-				log.Printf("[INF] domain %s recorded ipv6 is: %s", record.Name, recordIP)
+				log.Printf("[INF] Domain %s recorded ipv6 is: %s", record.Name, recordIP)
 				if currentIP != recordIP {
 					log.Printf("[INF] IPv6 address changed")
 					tryUpdateCFRecord(record, "AAAA", currentIP)
