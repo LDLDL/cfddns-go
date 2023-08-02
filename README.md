@@ -17,6 +17,6 @@ Cloudflare DDNS
     "AAAA": [
         "example.com",
         "6.example.com",
-    ],
+    ]
 }
 ```
