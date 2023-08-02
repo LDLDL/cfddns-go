@@ -12,11 +12,11 @@ Cloudflare DDNS
 
     "A": [
         "example.com",
-        "4.example.com",
+        "4.example.com"
     ],
     "AAAA": [
         "example.com",
-        "6.example.com",
+        "6.example.com"
     ]
 }
 ```
