@@ -11,12 +11,20 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-var conf = flag.StringP("conf", "c", "./config.json", "Config file path")
-var pLogPath = flag.StringP("log", "l", "", "Log file path")
-var onetime = flag.BoolP("onetime", "o", false, "Run just once")
-var usedns = flag.BoolP("usedns", "u", false, "Use dns to check your domain record")
-var nolog = flag.BoolP("nolog", "n", false, "Do not log to any file")
-var help = flag.BoolP("help", "h", false, "Print help")
+var (
+	buildCommit string
+	buildDate   string
+)
+
+var (
+	conf     = flag.StringP("conf", "c", "./config.json", "Config file path")
+	pLogPath = flag.StringP("log", "l", "", "Log file path")
+	onetime  = flag.BoolP("onetime", "o", false, "Run just once")
+	usedns   = flag.BoolP("usedns", "u", false, "Use dns to check your domain record")
+	nolog    = flag.BoolP("nolog", "n", false, "Do not log to any file")
+	help     = flag.BoolP("help", "h", false, "Print help")
+	version  = flag.BoolP("version", "v", false, "Print version")
+)
 
 var config Config
 
@@ -46,6 +54,11 @@ func init() {
 
 	if *help {
 		flag.PrintDefaults()
+		os.Exit(0)
+	}
+
+	if *version {
+		fmt.Printf("CloudFlare DDns go %s, built at %s\n", buildCommit, buildDate)
 		os.Exit(0)
 	}
 
