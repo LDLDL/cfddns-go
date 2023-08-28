@@ -25,7 +25,7 @@ While adding domain, input a incorrect ip.(later you can check if this program u
 ```
 
 ## 2. Executable arguments
-- --conf    Config file path, default value is ./conf.json  
+- --conf    Config file path, default value is ./config.json  
 - --log     Log file path  
 - --onetime Run just once, suitable for Crontab.  
 - --usedns  Use dns to get domain current recorded ip instead of Cloudflare api  
