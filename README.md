@@ -9,9 +9,9 @@ While adding domain, input a incorrect ip.(later you can check if this program u
 ## 1. Config file example
 ```
 {
-    "zones": "{zone id}",
-    "email": "{email}",
-    "apikey": "{global apikey}",
+    "zones": "",
+    "email": "",
+    "apikey": "",
 
     "A": [
         "example.com",
@@ -20,9 +20,35 @@ While adding domain, input a incorrect ip.(later you can check if this program u
     "AAAA": [
         "example.com",
         "6.example.com"
-    ]
+    ],
+
+    "subnet6": {
+        "prefix": 64,
+        "targets": [
+            {
+                "domain": "6.example.com",
+                "suffix": "::1111:2222:3333:ffff/64"
+            },
+            {
+                "domain": "66.example.com",
+                "suffix": "::8888/16"
+            }
+        ]
+    }
 }
 ```
+zones: your cloudflare domain zone id  
+email: your cloudflare account email  
+apikey: your cloudflare global api key  
+
+A: domain list to update A record to this machine  
+AAAA: domain list to update AAAA record to this machine  
+
+subnet6: (this is optional)  
+prefix: your ipv6 prefix length  
+targets: your other machines in your subnet to update  
+domain: domain to update AAAA record to your other machine  
+suffix: your other machine's ipv6 suffix  
 
 ## 2. Executable arguments
 - --conf    Config file path, default value is ./config.json  

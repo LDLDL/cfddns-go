@@ -1,14 +1,25 @@
 package main
 
 type Config struct {
-	Zones  string   `json:"zones"`
-	Email  string   `json:"email"`
-	APIKey string   `json:"apikey"`
-	A      []string `json:"A"`
-	AAAA   []string `json:"AAAA"`
+	Zones   string   `json:"zones"`
+	Email   string   `json:"email"`
+	APIKey  string   `json:"apikey"`
+	A       []string `json:"A"`
+	AAAA    []string `json:"AAAA"`
+	SubNet6 SubNET   `json:"subnet6"`
 
-	RecordA    []CFRecord `json:"-"`
-	RecordAAAA []CFRecord `json:"-"`
+	RecordA       []CFRecord `json:"-"`
+	RecordAAAA    []CFRecord `json:"-"`
+	RecordSubNET6 []CFRecord `json:"-"`
+	SuffixSubNET6 []uint128  `json:"-"`
+}
+
+type SubNET struct {
+	Prefix  int `json:"prefix"`
+	Targets []struct {
+		Domain string `json:"domain"`
+		Suffix string `json:"suffix"`
+	} `json:"targets"`
 }
 
 type CFRecord struct {

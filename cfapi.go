@@ -3,25 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
-	"os"
 )
 
 var cfHeader http.Header
 var cfDnsApiUrl string
-
-func ParseConfig(config *Config) {
-	generateUrlAndHeader(config)
-	getAllDnsRecordId(config)
-
-	for _, record := range config.RecordA {
-		log.Printf("[INF] Watch domain: %s, type A", record.Name)
-	}
-	for _, record := range config.RecordAAAA {
-		log.Printf("[INF] Watch domain: %s, type AAAA", record.Name)
-	}
-}
 
 func GetCFRecordIP(domain string, recordType string) (string, error) {
 	var result ListDnsRecordResp
@@ -95,44 +81,32 @@ func generateUrlAndHeader(config *Config) {
 	cfDnsApiUrl = fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/dns_records", config.Zones)
 }
 
-func getAllDnsRecordId(config *Config) {
-	for _, domain := range config.A {
-		config.RecordA = append(config.RecordA, CFRecord{domain, getDnsRecordId(domain, "A")})
-	}
-
-	for _, domain := range config.AAAA {
-		config.RecordAAAA = append(config.RecordAAAA, CFRecord{domain, getDnsRecordId(domain, "AAAA")})
-	}
-}
-
-func getDnsRecordId(domain string, recordType string) string {
+func getDnsRecordId(domain string, recordType string) (string, error) {
 	var result ListDnsRecordResp
 
 	resp, err := httpGetRequest(fmt.Sprintf("%s?type=%s&name=%s", cfDnsApiUrl, recordType, domain), cfHeader, 0)
 	if err != nil {
-		goto EXIT
+		goto ERR
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	resp.Body.Close()
 	if err != nil {
-		goto EXIT
+		goto ERR
 	}
 
 	if !result.Success {
 		err = fmt.Errorf("cloudflare api return unsuccess")
-		goto EXIT
+		goto ERR
 	}
 
 	for _, record := range result.Result {
 		if record.Name == domain {
-			return record.Id
+			return record.Id, nil
 		}
 	}
 	err = fmt.Errorf("domain record id not found")
 
-EXIT:
-	log.Printf("[ERR] Get domain %s, type %s record id failed: %s", domain, recordType, err.Error())
-	os.Exit(1)
-	return ""
+ERR:
+	return "", err
 }

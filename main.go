@@ -80,7 +80,7 @@ func init() {
 
 		logFile, err := os.OpenFile(logPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, os.ModePerm)
 		if err != nil {
-			log.Printf("[ERR] Failed opening log file %s : %s", logPath, err.Error())
+			log.Printf("[ERR] Failed to open log file %s : %s", logPath, err.Error())
 			os.Exit(1)
 		}
 		log.Printf("[INF] Log to file: %s", logPath)
@@ -97,13 +97,13 @@ func init() {
 			goto NEXT
 		}
 	}
-	log.Printf("[ERR] Failed loading config: %s", err.Error())
+	log.Printf("[ERR] Failed to load config: %s", err.Error())
 	os.Exit(1)
 
 NEXT:
 	ParseConfig(&config)
 
-	if len(config.RecordA) == 0 && len(config.RecordAAAA) == 0 {
+	if len(config.RecordA) == 0 && len(config.RecordAAAA) == 0 && len(config.RecordSubNET6) == 0 {
 		log.Printf("[ERR] No domain configured")
 		os.Exit(1)
 	}
@@ -120,6 +120,68 @@ func main() {
 		log.Printf("[INF] Sleep 10 minutes")
 		time.Sleep(10 * time.Minute)
 	}
+}
+
+func ParseConfig(config *Config) {
+	if config.SubNet6.Prefix < 1 || config.SubNet6.Prefix > 128 {
+		log.Printf("[ERR] Invalid prefix length")
+		os.Exit(1)
+	} else if config.SubNet6.Prefix > 64 {
+		log.Printf("[ERR] Prefix length > 64 is not supported")
+		os.Exit(1)
+	}
+
+	for _, targe := range config.SubNet6.Targets {
+		suffixUint128, err := getSuffixUint128(config.SubNet6.Prefix, targe.Suffix)
+		if err != nil {
+			log.Printf("[ERR] parse suffix failed: %s", err.Error())
+		}
+		config.SuffixSubNET6 = append(config.SuffixSubNET6, *suffixUint128)
+	}
+
+	generateUrlAndHeader(config)
+	success := getAllDnsRecordId(config)
+	if !success {
+		log.Printf("[ERR] Get all dns record id failed")
+	}
+
+	for _, record := range config.RecordA {
+		log.Printf("[INF] Watch domain: %s, type A", record.Name)
+	}
+	for _, record := range config.RecordAAAA {
+		log.Printf("[INF] Watch domain: %s, type AAAA", record.Name)
+	}
+	for index, record := range config.RecordSubNET6 {
+		log.Printf("[INF] Watch domain: %s, type AAAA for suffix %s", record.Name, config.SubNet6.Targets[index].Suffix)
+	}
+}
+
+func getAllDnsRecordId(config *Config) bool {
+	for _, domain := range config.A {
+		recordId, success := tryGetDnsRecordId(domain, "A")
+		if !success {
+			return success
+		}
+		config.RecordA = append(config.RecordA, CFRecord{domain, recordId})
+	}
+
+	for _, domain := range config.AAAA {
+		recordId, success := tryGetDnsRecordId(domain, "AAAA")
+		if !success {
+			return success
+		}
+		config.RecordAAAA = append(config.RecordAAAA, CFRecord{domain, recordId})
+	}
+
+	for _, target := range config.SubNet6.Targets {
+		recordId, success := tryGetDnsRecordId(target.Domain, "AAAA")
+		if !success {
+			return success
+		}
+		config.RecordSubNET6 = append(config.RecordSubNET6, CFRecord{target.Domain, recordId})
+	}
+
+	return true
 }
 
 func checkDomains() {
@@ -143,12 +205,17 @@ func checkDomains() {
 		}
 	}
 
-	if len(config.RecordAAAA) > 0 {
-		currentIP, success := tryGetCurrentIP("AAAA")
+	var currentIP string
+	if len(config.RecordAAAA) > 0 || len(config.RecordSubNET6) > 0 {
+		var success bool
+		currentIP, success = tryGetCurrentIP("AAAA")
 		if !success {
 			return
 		}
 		log.Printf("[INF] Current ipv6 address is: %s", currentIP)
+	}
+
+	if len(config.RecordAAAA) > 0 {
 		for _, record := range config.RecordAAAA {
 			recordIP, success := tryGetDomainRecordedIP(record.Name, "AAAA")
 			if success {
@@ -156,6 +223,26 @@ func checkDomains() {
 				if currentIP != recordIP {
 					log.Printf("[INF] IPv6 address changed")
 					tryUpdateCFRecord(record, "AAAA", currentIP)
+				}
+			}
+		}
+	}
+
+	if len(config.RecordSubNET6) > 0 {
+		for index, record := range config.RecordSubNET6 {
+			generatedIPv6, err := genIPv6AddressBySuffix(currentIP, config.SubNet6.Prefix, config.SuffixSubNET6[index])
+			if err != nil {
+				log.Printf("[WRN] Failed to generate ipv6 address: %s", err.Error())
+				continue
+			}
+			log.Printf("[INF] Generate ipv6 address: %s", generatedIPv6)
+
+			recordIP, success := tryGetDomainRecordedIP(record.Name, "AAAA")
+			if success {
+				log.Printf("[INF] Domain %s recorded ipv6 is: %s", record.Name, recordIP)
+				if generatedIPv6 != recordIP {
+					log.Printf("[INF] IPv6 address changed")
+					tryUpdateCFRecord(record, "AAAA", generatedIPv6)
 				}
 			}
 		}
@@ -168,10 +255,10 @@ func tryGetDomainRecordedIP(domain string, recordType string) (string, bool) {
 		if err == nil {
 			return ip, true
 		}
-		log.Printf("[WAR] %d/5 Failed to resolve domain %s, type %s : %s", i+1, domain, recordType, err.Error())
+		log.Printf("[WRN] %d/5 Failed to resolve domain %s, type %s : %s", i+1, domain, recordType, err.Error())
 	}
 
-	log.Printf("[WAR] Resolve domain retry limitation reached")
+	log.Printf("[WRN] Resolve domain retry limitation reached")
 	return "", false
 }
 
@@ -182,11 +269,11 @@ func tryGetCurrentIP(recordType string) (string, bool) {
 			if err == nil {
 				return ip, true
 			}
-			log.Printf("[WAR] %d/5 Failed to get current IP by using %s : %s", i+1, source.String(), err.Error())
+			log.Printf("[WRN] %d/5 Failed to get current IP by using %s : %s", i+1, source.String(), err.Error())
 		}
 	}
 
-	log.Printf("[WAR] Get current IP retry limitation reached")
+	log.Printf("[WRN] Get current IP retry limitation reached")
 	return "", false
 }
 
@@ -194,11 +281,23 @@ func tryUpdateCFRecord(domain CFRecord, recordType string, ip string) {
 	for i := 0; i < 5; i++ {
 		err := UpdateCFRecord(domain, recordType, ip)
 		if err == nil {
-			log.Printf("[INF] Domain %s, type %s record updated", domain.Name, recordType)
+			log.Printf("[INF] Domain %s, type %s record updated to %s", domain.Name, recordType, ip)
 			return
 		}
-		log.Printf("[WAR] %d/5 Failed to update domain %s, type %s: %s", i+1, domain.Name, recordType, err.Error())
+		log.Printf("[WRN] %d/5 Failed to update domain %s, type %s: %s", i+1, domain.Name, recordType, err.Error())
 	}
 
-	log.Printf("[WAR] Update domain retry limitation reached")
+	log.Printf("[WRN] Update domain retry limitation reached")
+}
+
+func tryGetDnsRecordId(domain string, recordType string) (string, bool) {
+	for i := 0; i < 5; i++ {
+		recordId, err := getDnsRecordId(domain, recordType)
+		if err == nil {
+			return recordId, true
+		}
+		log.Printf("[WRN] %d/5 Failed to get dns record id of domain %s type %s : %s", i+1, domain, recordType, err.Error())
+	}
+
+	return "", false
 }

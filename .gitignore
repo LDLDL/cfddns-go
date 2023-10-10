@@ -26,5 +26,8 @@ config.json
 # log file
 cfddns.log
 
+# binary file
+cfddns-go
+
 # build path
 release/*
