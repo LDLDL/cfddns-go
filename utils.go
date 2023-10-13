@@ -91,7 +91,7 @@ func httpGetRequest(url string, header http.Header, family int) (resp *http.Resp
 		return nil, err
 	}
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("GET '%s' Status: %s", url, resp.Status)
+		return nil, fmt.Errorf("GET '%s' status: %s", url, resp.Status)
 	}
 
 	return resp, nil
@@ -109,7 +109,7 @@ func cfapiPutRequest(url string, body []byte) (resp *http.Response, err error) {
 		return nil, err
 	}
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("PUT '%s' Status: %s", url, resp.Status)
+		return nil, fmt.Errorf("PUT '%s' status: %s", url, resp.Status)
 	}
 
 	return resp, nil
