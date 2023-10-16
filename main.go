@@ -186,26 +186,28 @@ func getAllDnsRecordId(config *Config) bool {
 
 func checkDomains() {
 	log.Printf("[INF] Checking your domains")
-	var currentIP string
-	var success bool
 
-	currentIP, success = tryGetCurrentIP("A")
-	if !success {
-		return
-	}
-	log.Printf("[INF] Current ipv4 address is: %s", currentIP)
-	for _, record := range config.RecordA {
-		recordIP, success := tryGetDomainRecordedIP(record.Name, "A")
-		if success {
-			log.Printf("[INF] Domain %s recorded ipv4 is: %s", record.Name, recordIP)
-			if currentIP != recordIP {
-				log.Printf("[INF] IPv4 address changed")
-				tryUpdateCFRecord(record, "A", currentIP)
+	if len(config.RecordA) > 0 {
+		currentIP, success := tryGetCurrentIP("A")
+		if !success {
+			return
+		}
+		log.Printf("[INF] Current ipv4 address is: %s", currentIP)
+		for _, record := range config.RecordA {
+			recordIP, success := tryGetDomainRecordedIP(record.Name, "A")
+			if success {
+				log.Printf("[INF] Domain %s recorded ipv4 is: %s", record.Name, recordIP)
+				if currentIP != recordIP {
+					log.Printf("[INF] IPv4 address changed")
+					tryUpdateCFRecord(record, "A", currentIP)
+				}
 			}
 		}
 	}
 
+	var currentIP string
 	if len(config.RecordAAAA) > 0 || len(config.RecordSubNET6) > 0 {
+		var success bool
 		currentIP, success = tryGetCurrentIP("AAAA")
 		if !success {
 			return
@@ -213,31 +215,35 @@ func checkDomains() {
 		log.Printf("[INF] Current ipv6 address is: %s", currentIP)
 	}
 
-	for _, record := range config.RecordAAAA {
-		recordIP, success := tryGetDomainRecordedIP(record.Name, "AAAA")
-		if success {
-			log.Printf("[INF] Domain %s recorded ipv6 is: %s", record.Name, recordIP)
-			if currentIP != recordIP {
-				log.Printf("[INF] IPv6 address changed")
-				tryUpdateCFRecord(record, "AAAA", currentIP)
+	if len(config.RecordAAAA) > 0 {
+		for _, record := range config.RecordAAAA {
+			recordIP, success := tryGetDomainRecordedIP(record.Name, "AAAA")
+			if success {
+				log.Printf("[INF] Domain %s recorded ipv6 is: %s", record.Name, recordIP)
+				if currentIP != recordIP {
+					log.Printf("[INF] IPv6 address changed")
+					tryUpdateCFRecord(record, "AAAA", currentIP)
+				}
 			}
 		}
 	}
 
-	for index, record := range config.RecordSubNET6 {
-		generatedIPv6, err := genIPv6AddressBySuffix(currentIP, config.SubNet6.Prefix, config.SuffixSubNET6[index])
-		if err != nil {
-			log.Printf("[WRN] Failed to generate ipv6 address: %s", err.Error())
-			continue
-		}
-		log.Printf("[INF] Generate ipv6 address: %s", generatedIPv6)
+	if len(config.RecordSubNET6) > 0 {
+		for index, record := range config.RecordSubNET6 {
+			generatedIPv6, err := genIPv6AddressBySuffix(currentIP, config.SubNet6.Prefix, config.SuffixSubNET6[index])
+			if err != nil {
+				log.Printf("[WRN] Failed to generate ipv6 address: %s", err.Error())
+				continue
+			}
+			log.Printf("[INF] Generate ipv6 address: %s", generatedIPv6)
 
-		recordIP, success := tryGetDomainRecordedIP(record.Name, "AAAA")
-		if success {
-			log.Printf("[INF] Domain %s recorded ipv6 is: %s", record.Name, recordIP)
-			if generatedIPv6 != recordIP {
-				log.Printf("[INF] IPv6 address changed")
-				tryUpdateCFRecord(record, "AAAA", generatedIPv6)
+			recordIP, success := tryGetDomainRecordedIP(record.Name, "AAAA")
+			if success {
+				log.Printf("[INF] Domain %s recorded ipv6 is: %s", record.Name, recordIP)
+				if generatedIPv6 != recordIP {
+					log.Printf("[INF] IPv6 address changed")
+					tryUpdateCFRecord(record, "AAAA", generatedIPv6)
+				}
 			}
 		}
 	}
