@@ -72,6 +72,7 @@ User=root
 ExecStart=/opt/cfddns-go/cfddns-go --conf /opt/cfddns-go/config.json
 Restart=always
 RestartSec=3
+
 [Install]
 WantedBy=multi-user.target
 ```
