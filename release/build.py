@@ -8,7 +8,7 @@ subprocess.run("rm ./cfddns-go*", shell=True)
 commitId = subprocess.run("git rev-parse --short HEAD", shell=True, capture_output=True)
 commitId = commitId.stdout.decode().strip()
 
-time = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M')
+time = datetime.datetime.now(datetime.UTC).strftime('%Y-%m-%d %H:%M')
 
 t = [['linux', 'amd64'],
      ['linux', 'arm'],
@@ -20,7 +20,7 @@ t = [['linux', 'amd64'],
 
 for o, a in t:
     subprocess.run(
-        f'''env GOOS="{o}" GOARCH="{a}" '''
+        f'''env GOOS="{o}" GOARCH="{a}" CGO_ENABLED=0 '''
         f'''go build -ldflags="-s -w '''
         f'''-X main.buildCommit={commitId} -X \'main.buildDate={time}\'" '''
         f'''-o cfddns-go_{o}_{a}{".exe" if o == "windows" else ""} '''

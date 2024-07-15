@@ -89,8 +89,9 @@ func init() {
 	}
 
 	var err error
-	if c, err := os.ReadFile(*conf); err == nil {
-		if err := json.Unmarshal(c, &config); err == nil {
+	var c []byte
+	if c, err = os.ReadFile(*conf); err == nil {
+		if err = json.Unmarshal(c, &config); err == nil {
 			if !*onetime {
 				log.Println("\n\n[INF] ================ Config loaded ================")
 			}
@@ -123,20 +124,22 @@ func main() {
 }
 
 func ParseConfig(config *Config) {
-	if config.SubNet6.Prefix < 1 || config.SubNet6.Prefix > 128 {
-		log.Printf("[ERR] Invalid prefix length")
-		os.Exit(1)
-	} else if config.SubNet6.Prefix > 64 {
-		log.Printf("[ERR] Prefix length > 64 is not supported")
-		os.Exit(1)
-	}
-
-	for _, targe := range config.SubNet6.Targets {
-		suffixUint128, err := getSuffixUint128(config.SubNet6.Prefix, targe.Suffix)
-		if err != nil {
-			log.Printf("[ERR] parse suffix failed: %s", err.Error())
+	if len(config.SubNet6.Targets) > 0 {
+		if config.SubNet6.Prefix < 1 || config.SubNet6.Prefix > 128 {
+			log.Printf("[ERR] Invalid prefix length")
+			os.Exit(1)
+		} else if config.SubNet6.Prefix > 64 {
+			log.Printf("[ERR] Prefix length > 64 is not supported")
+			os.Exit(1)
 		}
-		config.SuffixSubNET6 = append(config.SuffixSubNET6, *suffixUint128)
+
+		for _, targe := range config.SubNet6.Targets {
+			suffixUint128, err := getSuffixUint128(config.SubNet6.Prefix, targe.Suffix)
+			if err != nil {
+				log.Printf("[ERR] parse suffix failed: %s", err.Error())
+			}
+			config.SuffixSubNET6 = append(config.SuffixSubNET6, *suffixUint128)
+		}
 	}
 
 	generateUrlAndHeader(config)
@@ -269,7 +272,7 @@ func tryGetCurrentIP(recordType string) (string, bool) {
 			if err == nil {
 				return ip, true
 			}
-			log.Printf("[WRN] Failed to get current IP by using %s : %s", i+1, source.String(), err.Error())
+			log.Printf("[WRN] Failed to get current IP by using %d %s: %s", i+1, source.String(), err.Error())
 		}
 		log.Printf("[WRN] %d/5 Failed to get current IP after using all sources", i+1)
 	}
