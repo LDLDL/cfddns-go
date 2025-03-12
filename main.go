@@ -30,16 +30,12 @@ var config Config
 
 var Sources = map[string][]Source{
 	"A": {
-		&CFTrace{EndPoint: "cf-ns.com", IPFamily: 4},
-		&CFTrace{EndPoint: "162.159.36.1", IPFamily: 4},
 		&SimpleSource{EndPoint: "https://v4.ident.me/", IPFamily: 4},
 		&CFTrace{EndPoint: "1.1.1.1", IPFamily: 4},
 		&SimpleSource{EndPoint: "https://api4.ipify.org/", IPFamily: 4},
 	},
 
 	"AAAA": {
-		&CFTrace{EndPoint: "cf-ns.com", IPFamily: 6},
-		&CFTrace{EndPoint: "[2606:4700:4700::1111]", IPFamily: 6},
 		&SimpleSource{EndPoint: "https://v6.ident.me/", IPFamily: 6},
 		&CFTrace{EndPoint: "[2606:4700:4700::64]", IPFamily: 6},
 		&SimpleSource{EndPoint: "https://api6.ipify.org/", IPFamily: 6},
